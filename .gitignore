@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+web/node_modules/
+
+# Next.js build output
+.next/
+web/.next/
+web/out/
+web/build/
+
+# Environment files with secrets (NEVER commit your Mercado Pago Access Token!)
+.env
+.env*.local
+web/.env*.local
+!web/.env.example
+
+# Local SQLite databases (created automatically on startup)
+*.db
+*.db-wal
+*.db-shm
+web/data/*.db
+web/data/*.db-wal
+web/data/*.db-shm
+
+# OS & Logs
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+
+# Antigravity / Agents local cache
+.agents/
+.gemini/
+
