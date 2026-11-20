@@ -48,11 +48,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const savedCart = localStorage.getItem("dprp_cart");
       if (savedCart) {
         setCart(JSON.parse(savedCart));
-      } else {
-        const defaultProduct = PRODUCTS_DATA.find((p) => p.slug === "30-coins") || PRODUCTS_DATA[0];
-        if (defaultProduct) {
-          setCart([{ product: defaultProduct, quantity: 1 }]);
-        }
       }
 
       // Always sync cart items with the latest prices from the database
