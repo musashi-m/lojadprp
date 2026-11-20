@@ -22,6 +22,7 @@ import {
   CheckCircle2,
   AlertCircle,
   HelpCircle,
+  Lock,
 } from "lucide-react";
 
 function formatCpf(value: string): string {
@@ -373,17 +374,16 @@ export default function CheckoutPage() {
                         onChange={(e) => !discordUser?.email && setEmail(e.target.value)}
                         readOnly={Boolean(discordUser?.email)}
                         placeholder="Email"
-                        className={`w-full h-11 rounded-[0.6rem] bg-white/[0.04] border border-white/10 px-4 text-sm text-white placeholder-zinc-500 outline-none transition-colors ${
+                        className={`w-full h-11 rounded-[0.6rem] border px-4 text-sm placeholder-zinc-500 outline-none transition-colors ${
                           discordUser?.email
-                            ? "opacity-75 cursor-not-allowed bg-white/[0.02] border-white/5 text-zinc-300 pr-44"
-                            : "focus:border-[#ef9f00]"
+                            ? "cursor-not-allowed bg-zinc-900/80 border-white/5 text-zinc-400 pr-10"
+                            : "bg-white/[0.04] border-white/10 text-white focus:border-[#ef9f00]"
                         }`}
                       />
                       {discordUser?.email && (
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-zinc-400 font-medium bg-white/5 px-2 py-0.5 rounded border border-white/10 flex items-center gap-1 select-none pointer-events-none">
-                          <ShieldCheck className="size-3 text-[#5865F2]" />
-                          Travado pelo Discord
-                        </span>
+                        <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500 select-none pointer-events-none">
+                          <Lock className="size-4" />
+                        </div>
                       )}
                     </div>
 
