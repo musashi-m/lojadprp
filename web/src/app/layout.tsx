@@ -18,7 +18,13 @@ export const metadata: Metadata = {
   title: "Distrito Paulista RP - Home",
   description: "A Loja Oficial do Distrito Paulista RP. Adquira VIPs, upgrades, personalizações e itens exclusivos.",
   icons: {
-    icon: "https://distritopaulista.centralcart.ai/cdn/stores/24490/theme/df72b599-f8f9-4dca-a283-df61d4e0d71a.png",
+    icon: [
+      { url: "/logo.png", type: "image/png" },
+      { url: "/icon.png", type: "image/png" },
+      { url: "/favicon.ico" },
+    ],
+    shortcut: "/logo.png",
+    apple: "/logo.png",
   },
 };
 
@@ -32,6 +38,11 @@ export default function RootLayout({
       lang="pt-BR"
       className={`${geist.variable} ${kanit.variable} h-full antialiased dark bg-[#09090b]`}
     >
+      <head>
+        <link rel="icon" href="/logo.png" type="image/png" sizes="any" />
+        <link rel="shortcut icon" href="/logo.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/logo.png" />
+      </head>
       <body className="min-h-full flex flex-col font-sans bg-transparent text-[#fafafa] relative">
         {/* Real Distrito Paulista City Wallpaper (Fixed background - Pristine High Quality) */}
         <div className="fixed inset-0 -z-20 pointer-events-none select-none overflow-hidden">
