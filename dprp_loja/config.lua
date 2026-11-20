@@ -1,7 +1,7 @@
 Config = {}
 
 -- URL onde a sua loja Next.js está rodando (mesma VPS = http://127.0.0.1:3000)
-Config.ApiUrl = "http://127.0.0.1:3001"
+Config.ApiUrl = "http://127.0.0.1:3000"
 
 -- Chave secreta de autenticação entre o FiveM e a Loja Web
 -- DEVE SER A MESMA definida no .env.local da loja (FIVEM_API_SECRET)
@@ -13,8 +13,26 @@ Config.PollInterval = 10
 -- Webhook do Discord para logs de entrega da Staff (opcional)
 Config.DiscordWebhook = ""
 
--- Sistema de notificação in-game ('ox_lib', 'qbx', 'chat')
+-- Sistema de notificação individual para o comprador ('ox_lib' ou 'chat')
 Config.NotifySystem = 'ox_lib'
+
+-- ==============================================================
+-- Notificação Global de Compras da Loja (Para toda a cidade)
+-- ==============================================================
+-- Se ativado, exibe um anúncio para todos os jogadores online quando alguém compra na loja
+Config.BroadcastPurchase = true
+
+-- Onde exibir a notificação para a cidade:
+-- 'both'   : Exibe no Chat com design estilizado E via ox_lib no canto superior esquerdo (Recomendado)
+-- 'chat'   : Apenas no Chat estilizado (canto superior esquerdo da tela)
+-- 'ox_lib' : Apenas card ox_lib (canto superior esquerdo da tela)
+Config.BroadcastType = 'both'
+
+-- Duração do alerta do ox_lib em milissegundos (padrão: 9000ms = 9s)
+Config.BroadcastDuration = 9000
+
+-- Mensagem base (suporta {player} e {product})
+Config.BroadcastMessage = "{player} adquiriu {product} na nossa loja!"
 
 -- Mapeamento de Entrega por Categoria de Produto
 Config.Categories = {

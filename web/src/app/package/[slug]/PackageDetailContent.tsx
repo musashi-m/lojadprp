@@ -11,6 +11,7 @@ import {
   StoreProduct,
 } from "@/data/mockProducts";
 import { formatCurrency } from "@/lib/utils";
+import { PixIcon } from "@/components/PixIcon";
 import {
   ChevronRight,
   TrendingDown,
@@ -79,11 +80,13 @@ export const PackageDetailContent: React.FC<PackageDetailContentProps> = ({
                 <div className="flex flex-col md:flex-row gap-6">
                   {/* Package Image */}
                   <div className="w-full md:w-1/2 min-w-0 flex items-center justify-center">
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="rounded-md w-full object-cover border border-white/10 bg-zinc-950 aspect-[4/3] sm:aspect-square"
-                    />
+                    <div className="rounded-md w-full border border-white/10 bg-zinc-950/60 aspect-square flex items-center justify-center p-3 overflow-hidden">
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
                   </div>
 
                   {/* Details & Actions */}
@@ -125,8 +128,9 @@ export const PackageDetailContent: React.FC<PackageDetailContentProps> = ({
                         <h2 className="font-kanit text-3xl font-extrabold text-white leading-tight">
                           {formatCurrency(product.price)}
                         </h2>
-                        <p className="text-xs sm:text-sm text-zinc-400">
-                          À vista no Pix
+                        <p className="text-xs sm:text-sm text-zinc-400 flex items-center gap-1.5">
+                          <PixIcon className="size-3.5 text-[#32bcad]" />
+                          <span>À vista no Pix</span>
                         </p>
                       </div>
                     </div>
@@ -168,27 +172,33 @@ export const PackageDetailContent: React.FC<PackageDetailContentProps> = ({
                   Descrição
                 </h3>
 
-                <div className="space-y-4 text-sm text-zinc-300 leading-relaxed">
-                  <p>{desc.overview}</p>
+                {product.description ? (
+                  <div className="space-y-3 text-sm text-zinc-300 leading-relaxed whitespace-pre-line font-sans">
+                    {product.description}
+                  </div>
+                ) : (
+                  <div className="space-y-4 text-sm text-zinc-300 leading-relaxed">
+                    <p>{desc.overview}</p>
 
-                  {desc.sections?.map((sec, idx) => (
-                    <div key={idx} className="space-y-2 pt-2">
-                      <h4 className="font-kanit font-bold text-amber-400 text-sm tracking-wider uppercase">
-                        {sec.title}
-                      </h4>
+                    {desc.sections?.map((sec, idx) => (
+                      <div key={idx} className="space-y-2 pt-2">
+                        <h4 className="font-kanit font-bold text-amber-400 text-sm tracking-wider uppercase">
+                          {sec.title}
+                        </h4>
 
-                      {Array.isArray(sec.content) ? (
-                        <ul className="list-disc pl-5 space-y-1.5 text-zinc-300">
-                          {sec.content.map((item, i) => (
-                            <li key={i}>{item}</li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-zinc-300">{sec.content}</p>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                        {Array.isArray(sec.content) ? (
+                          <ul className="list-disc pl-5 space-y-1.5 text-zinc-300">
+                            {sec.content.map((item, i) => (
+                              <li key={i}>{item}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-zinc-300">{sec.content}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 

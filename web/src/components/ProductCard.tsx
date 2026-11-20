@@ -5,6 +5,7 @@ import Link from "next/link";
 import { StoreProduct } from "@/data/mockProducts";
 import { formatCurrency } from "@/lib/utils";
 import { TrendingDown, ShoppingBag } from "lucide-react";
+import { PixIcon } from "@/components/PixIcon";
 
 interface ProductCardProps {
   product: StoreProduct;
@@ -17,12 +18,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onBuyNow }) =
       {/* Clickable Image -> Product Page */}
       <Link
         href={`/package/${product.slug}`}
-        className="overflow-hidden relative border-b-2 border-white/10 aspect-[4/3] bg-zinc-950 flex items-center justify-center block"
+        className="overflow-hidden relative border-b-2 border-white/10 aspect-square bg-zinc-950/60 flex items-center justify-center p-1.5 block group"
       >
         <img
           src={product.image}
           alt={product.name}
-          className="transition object-cover w-full h-full group-hover:scale-105 duration-300"
+          className="transition w-full h-full object-contain group-hover:scale-105 duration-300 rounded-[0.4rem]"
           loading="lazy"
         />
       </Link>
@@ -59,13 +60,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onBuyNow }) =
 
           {/* CentralCart PIX Badge */}
           <div className="size-6 sm:size-7 bg-[#32bcad26] border border-[#32bcad4d] rounded-md p-1 flex items-center justify-center flex-shrink-0">
-            <svg
-              className="w-full h-full text-[#32bcad]"
-              viewBox="0 0 512 512"
-              fill="currentColor"
-            >
-              <path d="M407.4 207.6l-85.3-85.3c-15.6-15.6-40.9-15.6-56.6 0l-85.3 85.3c-15.6 15.6-15.6 40.9 0 56.6l85.3 85.3c15.6 15.6 40.9 15.6 56.6 0l85.3-85.3c15.6-15.6 15.6-40.9 0-56.6zm-113.6 56.6l-56.6-56.6 56.6-56.6 56.6 56.6-56.6 56.6z" />
-            </svg>
+            <PixIcon className="w-full h-full text-[#32bcad]" />
           </div>
         </div>
 

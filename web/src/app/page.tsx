@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { Navbar } from "@/components/Navbar";
@@ -16,18 +16,46 @@ import { Menu, ChevronRight, X, Layers, AlertCircle } from "lucide-react";
 
 export default function DistritoPaulistaStore() {
   const router = useRouter();
-  const { addToCart, characterId } = useCart();
+  const { addToCart } = useCart();
 
+  const [categories, setCategories] = useState<{ id: string; label: string }[]>(CATEGORIES_LIST);
+  const [products, setProducts] = useState<StoreProduct[]>(PRODUCTS_DATA);
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobileCategoryOpen, setIsMobileCategoryOpen] = useState(false);
+
+  useEffect(() => {
+    async function loadDynamicCatalog() {
+      try {
+        const [catRes, prodRes] = await Promise.all([
+          fetch("/api/categories"),
+          fetch("/api/products")
+        ]);
+        if (catRes.ok) {
+          const catData = await catRes.json();
+          if (catData.categories && catData.categories.length > 0) {
+            setCategories(catData.categories);
+          }
+        }
+        if (prodRes.ok) {
+          const prodData = await prodRes.json();
+          if (prodData.products && prodData.products.length > 0) {
+            setProducts(prodData.products);
+          }
+        }
+      } catch (err) {
+        console.error("Erro ao sincronizar catálogo dinâmico:", err);
+      }
+    }
+    loadDynamicCatalog();
+  }, []);
 
   const handleBuyNow = (product: StoreProduct) => {
     addToCart(product);
     router.push("/checkout");
   };
 
-  const filteredProducts = PRODUCTS_DATA.filter((p) => {
+  const filteredProducts = products.filter((p) => {
     const matchesCategory =
       activeCategory === "all" ? true : p.category === activeCategory;
     const matchesSearch =
@@ -63,7 +91,7 @@ export default function DistritoPaulistaStore() {
                   Categorias:{" "}
                   {activeCategory === "all"
                     ? "Todas as Categorias"
-                    : CATEGORIES_LIST.find((c) => c.id === activeCategory)?.label}
+                    : categories.find((c) => c.id === activeCategory)?.label || activeCategory.toUpperCase()}
                 </span>
               </span>
               <ChevronRight className="size-4 text-zinc-400" />
@@ -89,12 +117,12 @@ export default function DistritoPaulistaStore() {
                 >
                   <span>TODAS AS CATEGORIAS</span>
                   <span className="text-xs font-mono opacity-70">
-                    {PRODUCTS_DATA.length}
+                    {products.length}
                   </span>
                 </button>
 
-                {CATEGORIES_LIST.map((cat) => {
-                  const count = PRODUCTS_DATA.filter(
+                {categories.map((cat) => {
+                  const count = products.filter(
                     (p) => p.category === cat.id
                   ).length;
                   const isActive = activeCategory === cat.id;
@@ -121,8 +149,8 @@ export default function DistritoPaulistaStore() {
           {/* Right Main Column: Category Header Badge & Package Grid */}
           <div className="space-y-8">
             {activeCategory === "all" && searchQuery === "" ? (
-              CATEGORIES_LIST.map((cat) => {
-                const categoryProducts = PRODUCTS_DATA.filter(
+              categories.map((cat) => {
+                const categoryProducts = products.filter(
                   (p) => p.category === cat.id
                 );
                 if (categoryProducts.length === 0) return null;
@@ -151,35 +179,29 @@ export default function DistritoPaulistaStore() {
                   <h3 className="bg-amber-500/15 border-2 border-amber-500/80 w-fit py-1.5 px-4 rounded-[0.6rem] text-sm sm:text-base font-kanit font-bold backdrop-blur-sm text-white tracking-wider">
                     {searchQuery
                       ? `BUSCA: "${searchQuery}"`
-                      : CATEGORIES_LIST.find((c) => c.id === activeCategory)?.label ||
-                        "PRODUTOS"}
+                      : categories.find((c) => c.id === activeCategory)?.label ||
+                        activeCategory.toUpperCase()}
                   </h3>
 
                   {searchQuery && (
                     <button
                       onClick={() => setSearchQuery("")}
-                      className="text-xs text-zinc-400 hover:text-white underline"
+                      className="text-xs text-amber-400 hover:underline font-mono"
                     >
-                      Limpar busca
+                      Limpar filtro
                     </button>
                   )}
                 </div>
 
                 {filteredProducts.length === 0 ? (
-                  <div className="rounded-xl border border-white/10 bg-white/[0.02] p-12 text-center">
-                    <AlertCircle className="size-8 text-zinc-500 mx-auto mb-2" />
-                    <p className="font-kanit font-semibold text-zinc-300">
+                  <div className="rounded-2xl border border-white/10 bg-[#0d0f17]/50 p-12 text-center backdrop-blur-sm">
+                    <AlertCircle className="size-10 text-amber-400 mx-auto mb-3 opacity-60" />
+                    <p className="font-kanit text-lg font-bold text-white mb-1">
                       Nenhum pacote encontrado
                     </p>
-                    <button
-                      onClick={() => {
-                        setSearchQuery("");
-                        setActiveCategory("all");
-                      }}
-                      className="mt-3 btn-secondary h-8 px-4 text-xs"
-                    >
-                      Ver todos os produtos
-                    </button>
+                    <p className="text-sm text-zinc-400">
+                      Tente buscar por outro termo ou selecione outra categoria.
+                    </p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 package-list">
@@ -227,10 +249,10 @@ export default function DistritoPaulistaStore() {
                 }`}
               >
                 <span>TODAS AS CATEGORIAS</span>
-                <span className="text-xs font-mono">{PRODUCTS_DATA.length}</span>
+                <span className="text-xs font-mono">{products.length}</span>
               </button>
 
-              {CATEGORIES_LIST.map((cat) => (
+              {categories.map((cat) => (
                 <button
                   key={cat.id}
                   onClick={() => {
@@ -245,7 +267,7 @@ export default function DistritoPaulistaStore() {
                 >
                   <span>{cat.label}</span>
                   <span className="text-xs font-mono">
-                    {PRODUCTS_DATA.filter((p) => p.category === cat.id).length}
+                    {products.filter((p) => p.category === cat.id).length}
                   </span>
                 </button>
               ))}

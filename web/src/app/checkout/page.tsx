@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { PixCheckoutModal } from "@/components/PixCheckoutModal";
 import { CitizenModal } from "@/components/CitizenModal";
+import { PixIcon } from "@/components/PixIcon";
 import { formatCurrency } from "@/lib/utils";
 import { STORE_CONFIG } from "@/data/mockProducts";
 import {
@@ -23,6 +24,14 @@ import {
   HelpCircle,
 } from "lucide-react";
 
+function formatCpf(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9, 11)}`;
+}
+
 export default function CheckoutPage() {
   const {
     cart,
@@ -34,6 +43,7 @@ export default function CheckoutPage() {
     finalTotal,
     couponCode,
     applyCoupon,
+    removeCoupon,
     discordUser,
     loginWithDiscord,
     logoutDiscord,
@@ -49,18 +59,37 @@ export default function CheckoutPage() {
   const [couponInput, setCouponInput] = useState("");
   const [couponFeedback, setCouponFeedback] = useState<{ success: boolean; message: string } | null>(null);
 
+  // Auto preenche o email do cliente caso logado no Discord
+  useEffect(() => {
+    if (discordUser?.email) {
+      setEmail((prev) => (prev ? prev : discordUser.email || ""));
+    }
+  }, [discordUser]);
+
   const [validationError, setValidationError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeOrderId, setActiveOrderId] = useState("");
   const [activeQrCode, setActiveQrCode] = useState("");
   const [activeQrCodeBase64, setActiveQrCodeBase64] = useState("");
+  const [activeTotalAmount, setActiveTotalAmount] = useState<number | null>(null);
   const [isPixModalOpen, setIsPixModalOpen] = useState(false);
   const [isCitizenModalOpen, setIsCitizenModalOpen] = useState(false);
 
-  const handleApplyCoupon = (e: React.FormEvent) => {
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+
+  const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = applyCoupon(couponInput);
+    if (!couponInput.trim()) return;
+    setIsApplyingCoupon(true);
+    const res = await applyCoupon(couponInput);
     setCouponFeedback(res);
+    setIsApplyingCoupon(false);
+  };
+
+  const handleRemoveCoupon = () => {
+    removeCoupon();
+    setCouponInput("");
+    setCouponFeedback(null);
   };
 
   const handleSubmitPayment = async (e: React.FormEvent) => {
@@ -89,6 +118,35 @@ export default function CheckoutPage() {
 
     setIsSubmitting(true);
     try {
+      if (paymentMethod === "mercadopago") {
+        const res = await fetch("/api/checkout/mercadopago", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fullName,
+            email,
+            cpf,
+            characterId,
+            discordUser,
+            couponCode,
+            items: cart.map((i) => ({ productId: i.product.id, quantity: i.quantity })),
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          setValidationError(data.error || "Erro ao gerar checkout do Mercado Pago");
+          return;
+        }
+
+        // Limpa o carrinho antes de redirecionar para o Mercado Pago
+        clearCart();
+
+        // Redireciona o cliente diretamente para a página segura de pagamento do Mercado Pago
+        window.location.href = data.initPoint;
+        return;
+      }
+
       const res = await fetch("/api/checkout/pix", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -112,6 +170,9 @@ export default function CheckoutPage() {
       setActiveOrderId(data.orderId);
       setActiveQrCode(data.qrCode);
       setActiveQrCodeBase64(data.qrCodeBase64 || "");
+      if (typeof data.totalAmount === "number") {
+        setActiveTotalAmount(data.totalAmount);
+      }
       setIsPixModalOpen(true);
     } catch {
       setValidationError("Falha ao comunicar com o servidor. Tente novamente.");
@@ -169,13 +230,7 @@ export default function CheckoutPage() {
                     >
                       <div className="flex items-center gap-3.5">
                         <div className="size-9 rounded-md bg-[#32bcad26] border border-[#32bcad4d] p-1.5 flex items-center justify-center flex-shrink-0">
-                          <svg
-                            className="w-full h-full text-[#32bcad]"
-                            viewBox="0 0 512 512"
-                            fill="currentColor"
-                          >
-                            <path d="M407.4 207.6l-85.3-85.3c-15.6-15.6-40.9-15.6-56.6 0l-85.3 85.3c-15.6 15.6-15.6 40.9 0 56.6l85.3 85.3c15.6 15.6 40.9 15.6 56.6 0l85.3-85.3c15.6-15.6 15.6-40.9 0-56.6zm-113.6 56.6l-56.6-56.6 56.6-56.6 56.6 56.6-56.6 56.6z" />
-                          </svg>
+                          <PixIcon className="w-full h-full text-[#32bcad]" />
                         </div>
 
                         <div>
@@ -288,7 +343,7 @@ export default function CheckoutPage() {
                     <div>
                       <button
                         type="button"
-                        onClick={loginWithDiscord}
+                        onClick={() => loginWithDiscord("/checkout")}
                         className="w-full flex items-center justify-center gap-2 rounded-[0.6rem] bg-[#5865F2] hover:bg-[#4752c4] text-white py-3 px-4 font-bold text-sm shadow-md transition-all active:scale-[0.99]"
                       >
                         <DiscordIcon className="size-5" />
@@ -326,8 +381,9 @@ export default function CheckoutPage() {
                         type="text"
                         required
                         value={cpf}
-                        onChange={(e) => setCpf(e.target.value)}
-                        placeholder="CPF"
+                        onChange={(e) => setCpf(formatCpf(e.target.value))}
+                        placeholder="CPF (000.000.000-00)"
+                        maxLength={14}
                         className="w-full h-11 rounded-[0.6rem] bg-white/[0.04] border border-white/10 px-4 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#ef9f00] transition-colors font-mono"
                       />
                     </div>
@@ -412,7 +468,7 @@ export default function CheckoutPage() {
                             <img
                               src={item.product.image}
                               alt={item.product.name}
-                              className="size-12 rounded-md object-cover border border-white/10 bg-zinc-950 flex-shrink-0"
+                              className="size-12 rounded-md object-contain p-0.5 border border-white/10 bg-zinc-950 flex-shrink-0"
                             />
 
                             <div className="min-w-0">
@@ -468,25 +524,45 @@ export default function CheckoutPage() {
 
                   {/* Coupon Input Box */}
                   <div className="pt-2">
-                    <div className="flex items-center">
-                      <input
-                        type="text"
-                        value={couponInput}
-                        onChange={(e) => setCouponInput(e.target.value)}
-                        placeholder="Digite seu cupom de desconto"
-                        className="flex-1 h-10 rounded-l-[0.6rem] bg-white/[0.04] border border-white/10 border-r-0 px-3.5 text-xs text-white placeholder-zinc-500 outline-none uppercase font-mono focus:border-[#ef9f00]"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleApplyCoupon}
-                        className="h-10 px-4 rounded-r-[0.6rem] bg-[#ef9f00] hover:bg-[#d98e00] text-zinc-950 font-kanit font-bold text-xs flex items-center gap-1.5 transition-colors"
-                      >
-                        <Tag className="size-3.5" />
-                        <span>Aplicar</span>
-                      </button>
-                    </div>
+                    {couponCode ? (
+                      <div className="flex items-center justify-between p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs">
+                        <div className="flex items-center gap-2">
+                          <Tag className="size-4 text-emerald-400" />
+                          <div>
+                            <span className="font-mono font-bold text-white uppercase">{couponCode}</span>
+                            <span className="text-[11px] text-emerald-400 ml-1.5">aplicado com sucesso!</span>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleRemoveCoupon}
+                          className="text-[11px] text-zinc-400 hover:text-rose-400 underline font-medium"
+                        >
+                          Remover
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center">
+                        <input
+                          type="text"
+                          value={couponInput}
+                          onChange={(e) => setCouponInput(e.target.value)}
+                          placeholder="Digite seu cupom de desconto"
+                          className="flex-1 h-10 rounded-l-[0.6rem] bg-white/[0.04] border border-white/10 border-r-0 px-3.5 text-xs text-white placeholder-zinc-500 outline-none uppercase font-mono focus:border-[#ef9f00]"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleApplyCoupon}
+                          disabled={isApplyingCoupon}
+                          className="h-10 px-4 rounded-r-[0.6rem] bg-[#ef9f00] hover:bg-[#d98e00] text-zinc-950 font-kanit font-bold text-xs flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                        >
+                          <Tag className="size-3.5" />
+                          <span>{isApplyingCoupon ? "..." : "Aplicar"}</span>
+                        </button>
+                      </div>
+                    )}
 
-                    {couponFeedback && (
+                    {couponFeedback && !couponCode && (
                       <p
                         className={`text-xs mt-1.5 ${
                           couponFeedback.success ? "text-emerald-400" : "text-rose-400"
@@ -541,7 +617,7 @@ export default function CheckoutPage() {
         qrCode={activeQrCode}
         qrCodeBase64={activeQrCodeBase64}
         items={cart}
-        totalAmount={finalTotal}
+        totalAmount={activeTotalAmount !== null ? activeTotalAmount : finalTotal}
         characterId={characterId}
         onPaymentSuccess={() => {
           clearCart();

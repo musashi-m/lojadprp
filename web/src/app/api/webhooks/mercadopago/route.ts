@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dbRepository } from "@/lib/db";
+import { sendDiscordPurchaseNotification } from "@/lib/discordNotifier";
 import {
   fetchMercadoPagoPaymentStatus,
   verifyMercadoPagoWebhookSignature,
@@ -59,6 +60,14 @@ export async function POST(req: NextRequest) {
       if (order) {
         const marked = dbRepository.markOrderAsPaid(order.id, String(dataId));
         console.log(`[MercadoPago Webhook] Order ${order.id} marked as PAID. (new: ${marked})`);
+        if (marked) {
+          const paidOrder = dbRepository.getOrderById(order.id);
+          if (paidOrder) {
+            sendDiscordPurchaseNotification(paidOrder).catch((err) =>
+              console.error("[MercadoPago Webhook] Discord notification error:", err)
+            );
+          }
+        }
       } else {
         console.warn(`[MercadoPago Webhook] No matching order found for payment ${dataId}`);
       }

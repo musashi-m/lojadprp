@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
     }[] = [];
 
     for (const item of items) {
-      const product = PRODUCTS_DATA.find((p) => p.id === item.productId || p.slug === item.productId);
+      const product = dbRepository.getProductByIdOrSlug(item.productId) || PRODUCTS_DATA.find((p) => p.id === item.productId || p.slug === item.productId);
       if (!product) {
         return NextResponse.json(
           { success: false, error: `Produto não encontrado: ${item.productId}` },
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const finalTotal = Math.max(0.5, Number((subtotal - discountAmount).toFixed(2)));
+    const finalTotal = Math.max(0.01, Number((subtotal - discountAmount).toFixed(2)));
     const orderId = `DPRP-${Date.now().toString().slice(-6)}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
     // 1. Create Order in DB (status: PENDING)

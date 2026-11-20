@@ -17,6 +17,21 @@ export async function POST(
     const { id } = await params;
     const body = await req.json().catch(() => ({}));
 
+    // Handle expiration command acknowledgment
+    if (id.startsWith("EXP-")) {
+      const expId = id.replace("EXP-", "");
+      dbRepository.markExpirationProcessed(
+        expId,
+        typeof body.response === "string" ? body.response : JSON.stringify(body)
+      );
+      return NextResponse.json({
+        success: true,
+        orderId: id,
+        status: "EXPIRED_DELIVERED",
+        deliveredAt: new Date().toISOString(),
+      });
+    }
+
     const order = dbRepository.getOrderById(id);
     if (!order) {
       return NextResponse.json(

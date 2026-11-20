@@ -178,3 +178,89 @@ export function verifyMercadoPagoWebhookSignature(
   }
 }
 
+export interface CreatePreferenceParams {
+  orderId: string;
+  amount: number;
+  items: {
+    title: string;
+    quantity: number;
+    unitPrice: number;
+  }[];
+  customerName: string;
+  customerEmail: string;
+  customerCpf: string;
+}
+
+export async function createMercadoPagoPreference(params: CreatePreferenceParams): Promise<{
+  preferenceId: string;
+  initPoint: string;
+}> {
+  const token = process.env.MERCADOPAGO_ACCESS_TOKEN?.trim();
+  const storeUrl = process.env.STORE_URL?.replace(/\/+$/, "") || "http://localhost:3000";
+
+  if (!token || token === "mock" || token === "sandbox") {
+    return {
+      preferenceId: `pref_sim_${Date.now()}`,
+      initPoint: `${storeUrl}/checkout/success?order_id=${params.orderId}`,
+    };
+  }
+
+  const cleanCpf = params.customerCpf.replace(/\D/g, "");
+  const cleanEmail = params.customerEmail.trim();
+  const cleanName = params.customerName.trim();
+
+  const payload: Record<string, unknown> = {
+    items: params.items.map((i) => ({
+      title: i.title,
+      quantity: i.quantity,
+      unit_price: Number(i.unitPrice.toFixed(2)),
+      currency_id: "BRL",
+    })),
+    payer: {
+      name: cleanName.split(" ")[0] || "Cliente",
+      surname: cleanName.split(" ").slice(1).join(" ") || "DPRP",
+      email: cleanEmail,
+      identification: {
+        type: "CPF",
+        number: cleanCpf,
+      },
+    },
+    external_reference: params.orderId,
+    back_urls: {
+      success: `${storeUrl}/checkout/success?order_id=${params.orderId}`,
+      failure: `${storeUrl}/checkout?error=payment_failed`,
+      pending: `${storeUrl}/checkout/success?order_id=${params.orderId}`,
+    },
+    auto_return: "approved",
+  };
+
+  if (
+    storeUrl &&
+    storeUrl.startsWith("https://") &&
+    !storeUrl.includes("localhost") &&
+    !storeUrl.includes("127.0.0.1")
+  ) {
+    payload.notification_url = `${storeUrl}/api/webhooks/mercadopago`;
+  }
+
+  const res = await fetch("https://api.mercadopago.com/checkout/preferences", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    console.error("[MercadoPago] Error creating preference:", data);
+    throw new Error(data.message || data.error || "Erro ao criar checkout do Mercado Pago");
+  }
+
+  return {
+    preferenceId: String(data.id),
+    initPoint: data.init_point,
+  };
+}
+

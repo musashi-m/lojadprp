@@ -11,9 +11,9 @@ import {
   ExternalLink,
   User,
   BadgeCheck,
-  Disc as DiscordIcon,
   LogOut,
 } from "lucide-react";
+import { DiscordIcon } from "@/components/DiscordIcon";
 
 interface NavbarProps {
   cartCount?: number;
@@ -176,11 +176,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
               ) : (
                 <button
-                  onClick={loginWithDiscord}
-                  className="btn-secondary h-9 px-3 sm:px-4 text-xs font-semibold flex items-center gap-1.5"
+                  onClick={() => loginWithDiscord()}
+                  className="btn-secondary h-9 px-3 sm:px-4 text-xs font-semibold flex items-center gap-2 border-[#5865F2]/40 hover:border-[#5865F2] hover:bg-[#5865F2]/10 text-white transition-all shadow-sm"
                 >
-                  <User className="w-4 h-4 text-zinc-300" />
-                  <span className="hidden sm:inline">Entrar</span>
+                  <DiscordIcon className="w-4 h-4 text-[#5865F2]" />
+                  <span>Entrar</span>
                 </button>
               )}
             </li>

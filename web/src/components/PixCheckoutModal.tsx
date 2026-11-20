@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { CartItem } from "@/types/store";
 import { formatCurrency } from "@/lib/utils";
 import confetti from "canvas-confetti";
+import { PixIcon } from "@/components/PixIcon";
 import {
   X,
   Copy,
@@ -130,8 +131,8 @@ export const PixCheckoutModal: React.FC<PixCheckoutModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between pb-5 border-b border-white/10">
           <div className="flex items-center gap-3">
-            <div className="size-10 rounded-[0.6rem] bg-[#32bcad26] border border-[#32bcad4d] flex items-center justify-center text-[#32bcad]">
-              <Zap className="h-5 w-5 fill-[#32bcad]" />
+            <div className="size-10 rounded-[0.6rem] bg-[#32bcad26] border border-[#32bcad4d] flex items-center justify-center text-[#32bcad] p-2">
+              <PixIcon className="w-full h-full text-[#32bcad]" />
             </div>
             <div>
               <h3 className="font-kanit text-lg font-bold text-white flex items-center gap-2">
@@ -261,8 +262,8 @@ export const PixCheckoutModal: React.FC<PixCheckoutModalProps> = ({
                 )}
 
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="h-8 w-8 rounded-lg bg-[#32bcad] flex items-center justify-center text-zinc-950 font-bold text-xs shadow-md border-2 border-white">
-                    <Zap className="h-4 w-4 fill-zinc-950" />
+                  <div className="size-9 rounded-xl bg-white flex items-center justify-center p-1.5 shadow-xl border-2 border-white">
+                    <PixIcon className="w-full h-full text-[#32bcad]" />
                   </div>
                 </div>
               </div>

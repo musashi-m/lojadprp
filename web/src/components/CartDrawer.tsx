@@ -2,7 +2,9 @@
 
 import React, { useState } from "react";
 import { CartItem } from "@/types/store";
+import { useCart } from "@/context/CartContext";
 import { formatCurrency } from "@/lib/utils";
+import { PixIcon } from "@/components/PixIcon";
 import {
   X,
   Trash2,
@@ -37,10 +39,19 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   onUpdateCitizenId,
   onProceedToCheckout,
 }) => {
-  const [couponCode, setCouponCode] = useState("");
-  const [discountPercent, setDiscountPercent] = useState(0);
+  const {
+    couponCode,
+    discountPercent,
+    discountAmount,
+    finalTotal,
+    applyCoupon,
+    removeCoupon,
+  } = useCart();
+
+  const [inputCoupon, setInputCoupon] = useState("");
   const [couponError, setCouponError] = useState("");
   const [couponSuccess, setCouponSuccess] = useState("");
+  const [isApplying, setIsApplying] = useState(false);
   const [inputCitizen, setInputCitizen] = useState(citizenId);
 
   if (!isOpen) return null;
@@ -50,25 +61,23 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     0
   );
 
-  const discountAmount = (subtotal * discountPercent) / 100;
-  const finalTotal = Math.max(0, subtotal - discountAmount);
-
-  const handleApplyCoupon = (e: React.FormEvent) => {
+  const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     setCouponError("");
     setCouponSuccess("");
 
-    const code = couponCode.trim().toUpperCase();
+    const code = inputCoupon.trim().toUpperCase();
     if (!code) return;
 
-    if (code === "DISTRITO10" || code === "BEMVINDO10") {
-      setDiscountPercent(10);
-      setCouponSuccess("Cupom de 10% aplicado!");
-    } else if (code === "PAULISTA20") {
-      setDiscountPercent(20);
-      setCouponSuccess("Cupom especial de 20% aplicado!");
+    setIsApplying(true);
+    const res = await applyCoupon(code);
+    setIsApplying(false);
+
+    if (res.success) {
+      setCouponSuccess(res.message);
+      setInputCoupon("");
     } else {
-      setCouponError("Cupom inválido. Tente DISTRITO10");
+      setCouponError(res.message);
     }
   };
 
@@ -189,7 +198,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       <img
                         src={item.product.image}
                         alt={item.product.name}
-                        className="h-14 w-14 rounded-md object-cover flex-shrink-0 border border-white/10 bg-zinc-950"
+                        className="h-14 w-14 rounded-md object-contain p-0.5 flex-shrink-0 border border-white/10 bg-zinc-950"
                       />
 
                       <div className="flex-1 min-w-0">
@@ -230,36 +239,54 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 </div>
 
                 {/* Coupon Code Input */}
-                <form onSubmit={handleApplyCoupon} className="pt-2 border-t border-white/10">
+                <div className="pt-2 border-t border-white/10">
                   <label className="block text-[11px] font-medium text-zinc-400 mb-1.5">
                     Cupom de Desconto
                   </label>
-                  <div className="flex gap-2">
-                    <div className="relative flex-1">
-                      <Tag className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500" />
-                      <input
-                        type="text"
-                        value={couponCode}
-                        onChange={(e) => setCouponCode(e.target.value)}
-                        placeholder="Ex: DISTRITO10"
-                        className="w-full rounded-lg bg-white/5 border border-white/10 pl-8 pr-3 py-1.5 text-xs uppercase font-mono text-white placeholder-zinc-600 outline-none focus:border-amber-400"
-                      />
+                  {couponCode ? (
+                    <div className="flex items-center justify-between p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <Tag className="size-3.5 text-emerald-400" />
+                        <span className="font-mono font-bold text-white uppercase">{couponCode}</span>
+                        <span className="text-[10px] text-emerald-400">({discountPercent}% OFF)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={removeCoupon}
+                        className="text-[10px] text-zinc-400 hover:text-rose-400 underline"
+                      >
+                        Remover
+                      </button>
                     </div>
-                    <button
-                      type="submit"
-                      className="btn-secondary h-8 px-3 text-xs"
-                    >
-                      Aplicar
-                    </button>
-                  </div>
+                  ) : (
+                    <form onSubmit={handleApplyCoupon} className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Tag className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500" />
+                        <input
+                          type="text"
+                          value={inputCoupon}
+                          onChange={(e) => setInputCoupon(e.target.value)}
+                          placeholder="Ex: DPRP10"
+                          className="w-full rounded-lg bg-white/5 border border-white/10 pl-8 pr-3 py-1.5 text-xs uppercase font-mono text-white placeholder-zinc-600 outline-none focus:border-amber-400"
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={isApplying}
+                        className="btn-secondary h-8 px-3 text-xs disabled:opacity-50"
+                      >
+                        {isApplying ? "..." : "Aplicar"}
+                      </button>
+                    </form>
+                  )}
 
-                  {couponSuccess && (
+                  {couponSuccess && !couponCode && (
                     <p className="mt-1.5 text-[11px] text-emerald-400">{couponSuccess}</p>
                   )}
                   {couponError && (
                     <p className="mt-1.5 text-[11px] text-rose-400">{couponError}</p>
                   )}
-                </form>
+                </div>
               </>
             )}
           </div>
@@ -284,8 +311,9 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
                 <div className="flex justify-between text-zinc-400">
                   <span>Forma de Pagamento</span>
-                  <span className="text-emerald-400 font-medium flex items-center gap-1">
-                    <Zap className="h-3 w-3" /> PIX Automático
+                  <span className="text-[#32bcad] font-semibold flex items-center gap-1.5">
+                    <PixIcon className="size-3.5 text-[#32bcad]" />
+                    <span>PIX Automático</span>
                   </span>
                 </div>
 

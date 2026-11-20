@@ -1,12 +1,45 @@
+export interface ProductCommand {
+  timing: "Após a confirmação" | "Quando expirar" | "Após uma disputa" | string;
+  command: string;
+}
+
 export interface StoreProduct {
   id: string;
   slug: string;
   name: string;
-  category: 'coins' | 'gemas' | 'vips' | 'especiais' | 'policial' | 'pacotes';
+  category: 'coins' | 'gemas' | 'vips' | 'especiais' | 'policial' | 'pacotes' | string;
   price: number;
   originalPrice?: number;
   discount?: number;
   image: string;
+  description?: string;
+  isActive?: boolean;
+  displayOrder?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  // CentralCart fields
+  commands?: (string | ProductCommand)[];
+  discordActions?: ProductDiscordAction[];
+  cost?: number;
+  stock?: boolean;
+  minQuantity?: boolean;
+  limitPerUser?: boolean;
+  quantityLimit?: boolean;
+  removeAfter?: string;
+}
+
+export interface ProductDiscordAction {
+  timing: "Após a confirmação" | "Quando expirar" | "Após uma disputa" | string;
+  action: "Adicionar cargo" | "Remover cargo" | "Aplicar banimento" | "Revogar banimento" | string;
+  roleId: string;
+}
+
+export interface StoreCategory {
+  id: string;
+  label: string;
+  displayOrder?: number;
+  createdAt?: string;
+  productCount?: number;
 }
 
 export const STORE_CONFIG = {
@@ -14,7 +47,7 @@ export const STORE_CONFIG = {
   serverTagline: "A Loja Oficial do Distrito Paulista RP",
   heroDescription: "Adquira VIPs, upgrades, personalizações e itens exclusivos com entrega rápida, pagamento seguro e suporte dedicado. Evolua sua experiência no Distrito Paulista RP com total praticidade.",
   logoUrl: "https://distritopaulista.centralcart.ai/cdn/stores/24490/theme/df72b599-f8f9-4dca-a283-df61d4e0d71a.png",
-  bgWallpaperUrl: "https://distritopaulista.centralcart.ai/cdn/stores/24490/template_options/99e22716-b379-43d6-adbc-4e41fcf19f4f.webp",
+  bgWallpaperUrl: "/background.png",
   bannerGifUrl: "https://distritopaulista.centralcart.ai/cdn/stores/24490/template_options/8b65fb9a-4b03-4c70-9d29-c445e20bd2ec.gif",
   socials: {
     discord: "https://discord.gg/TZtatFsD9T",
@@ -410,11 +443,20 @@ export function getProductBySlug(slug: string): StoreProduct | undefined {
   return PRODUCTS_DATA.find((p) => p.slug === decoded || p.slug === slug || p.id === slug);
 }
 
-export function getProductDescription(product: StoreProduct): {
+export function getProductDescription(product: {
+  category?: string;
+  slug?: string;
+  name?: string;
+}): {
   overview: string;
   sections?: { title: string; content: string[] | string }[];
 } {
-  if (product.category === "coins") {
+  const cat = (product.category || "").toLowerCase();
+  const slug = (product.slug || "").toLowerCase();
+  const name = (product.name || "").toLowerCase();
+
+  // 1. COINS
+  if (cat === "coins") {
     return {
       overview: "As Coins são a moeda premium exclusiva da Distrito Paulista.",
       sections: [
@@ -429,14 +471,19 @@ export function getProductDescription(product: StoreProduct): {
             "Veículos exclusivos;",
             "Benefícios premium;",
             "Conteúdos especiais;",
-            "Futuras novidades disponibilizadas na cidade.",
+            "Futuras novidades disponibilizadas pela cidade.",
           ],
+        },
+        {
+          title: "CONSULTAR SALDO",
+          content: "Para consultar sua quantidade de Coins, utilize o comando: /moeda",
         },
       ],
     };
   }
 
-  if (product.category === "gemas") {
+  // 2. GEMAS
+  if (cat === "gemas") {
     return {
       overview: "As Gemas são utilizadas para giros de roleta da sorte, caixas misteriosas e itens cosméticos exclusivos.",
       sections: [
@@ -456,9 +503,23 @@ export function getProductDescription(product: StoreProduct): {
     };
   }
 
-  if (product.category === "vips") {
+  // 3. VIPS
+  if (cat === "vips") {
+    let vipOverview = "Plano VIP de prestígio no Distrito Paulista com vantagens em economia, slots e prioridade.";
+    if (name.includes("turista") || slug.includes("turista")) {
+      vipOverview = "Plano VIP Turista — A porta de entrada ideal para novos moradores com vantagens essenciais e bônus de salário.";
+    } else if (name.includes("paulista") || slug.includes("paulista")) {
+      vipOverview = "Plano VIP Paulista — Nível intermediário completo com slots extras de roupas, bônus de rendimento e vantagens especiais.";
+    } else if (name.includes("distrito") || slug.includes("distrito")) {
+      vipOverview = "Plano VIP Distrito — Nível avançado com alta prioridade na fila da cidade, verificado oficial e grandes bônus de rendimentos.";
+    } else if (name.includes("magnata") || slug.includes("magnata")) {
+      vipOverview = "Plano VIP Magnata — O nível máximo de prestígio e autoridade com todas as vantagens e regalias liberadas no servidor.";
+    } else if (name.includes("policial") || slug.includes("policial")) {
+      vipOverview = "Plano VIP Policial — Desenvolvido exclusivamente para membros da polícia militar e civil com vantagens na carreira.";
+    }
+
     return {
-      overview: "Plano VIP de prestígio no Distrito Paulista com vantagens em economia, slots e prioridade.",
+      overview: vipOverview,
       sections: [
         {
           title: "BENEFÍCIOS PRINCIPAIS",
@@ -479,8 +540,122 @@ export function getProductDescription(product: StoreProduct): {
     };
   }
 
+  // 4. POLICIAL
+  if (cat === "policial") {
+    return {
+      overview: "Item e personalização oficial da corporação policial do Distrito Paulista RP.",
+      sections: [
+        {
+          title: "INSTRUÇÕES & REGRAS",
+          content: [
+            "Exclusivo para membros devidamente recrutados e na ativa da corporação;",
+            "Liberação de prefixo ou rádio mediante autorização do comando geral;",
+            "Entrega automática com registro no sistema da corregedoria.",
+          ],
+        },
+      ],
+    };
+  }
+
+  // 5. PACOTES (PACKS)
+  if (cat === "pacotes") {
+    if (name.includes("100k") || name.includes("500k") || name.includes("1kk") || slug.includes("pack")) {
+      return {
+        overview: "Pacote de economia oficial para impulsionar seu personagem no Distrito Paulista RP.",
+        sections: [
+          {
+            title: "INFORMAÇÕES DO PACOTE",
+            content: [
+              "Dinheiro limpo creditado diretamente na conta bancária do personagem;",
+              "Sem risco de roubo ou perda no ato da entrega;",
+              "Entrega automática e instantânea logo após confirmação do PIX.",
+            ],
+          },
+        ],
+      };
+    }
+    if (name.includes("kit") || slug.includes("kit")) {
+      return {
+        overview: "Kit de suprimentos e equipamentos essenciais para criação e manutenção de organizações.",
+        sections: [
+          {
+            title: "CONTEÚDO DO KIT",
+            content: [
+              "Suprimentos básicos para membros e liderança da facção/organização;",
+              "Liberação no painel da organização na cidade;",
+              "Suporte da equipe de administração para alinhamento territorial.",
+            ],
+          },
+        ],
+      };
+    }
+  }
+
+  // 6. ESPECIAIS
+  if (cat === "especiais") {
+    if (slug.includes("unban") || name.includes("unban")) {
+      return {
+        overview: "Pacote oficial de desbanimento e revisão de punição no Distrito Paulista RP.",
+        sections: [
+          {
+            title: "REGRAS DO UNBAN",
+            content: [
+              "Válido apenas para banimentos comunitários e punições passíveis de revisão;",
+              "Banimentos por uso de trapaças / softwares de terceiros (cheats) NÃO são passíveis de unban;",
+              "Liberação automática na whitelist do servidor após a confirmação.",
+            ],
+          },
+        ],
+      };
+    }
+    if (slug.includes("som") || name.includes("som")) {
+      return {
+        overview: "Acesso permanente ao comando /som no veículo ou ambiente do Distrito Paulista RP.",
+        sections: [
+          {
+            title: "FUNCIONALIDADES",
+            content: [
+              "Permite reproduzir músicas do YouTube ou links de áudio diretos;",
+              "Controle de volume espacial 3D em tempo real;",
+              "Funciona em qualquer veículo que você estiver conduzindo.",
+            ],
+          },
+        ],
+      };
+    }
+    if (slug.includes("tv") || name.includes("tv")) {
+      return {
+        overview: "Acesso ao sistema de TV e transmissão multimídia em residências e propriedades.",
+        sections: [
+          {
+            title: "COMO UTILIZAR",
+            content: [
+              "Interaja com o televisor de qualquer imóvel próprio ou alugado;",
+              "Compatível com transmissões ao vivo e vídeos via web.",
+            ],
+          },
+        ],
+      };
+    }
+    if (slug.includes("instapic") || name.includes("instapic")) {
+      return {
+        overview: "Selo azul de verificado oficial em seu perfil do Instapic no celular in-game.",
+        sections: [
+          {
+            title: "BENEFÍCIOS",
+            content: [
+              "Destaque em postagens e perfil verificado visível para todos os cidadãos;",
+              "Proteção contra contas fakes ou imitadores na rede social da cidade.",
+            ],
+          },
+        ],
+      };
+    }
+  }
+
+  // DEFAULT
   return {
-    overview: `Item oficial da categoria ${product.category.toUpperCase()} do Distrito Paulista RP.`,
+    overview: `Item oficial da categoria ${(product.category || "loja").toUpperCase()} do Distrito Paulista RP.`,
     sections: [
       {
         title: "INSTRUÇÕES DE ENTREGA",
@@ -492,4 +667,112 @@ export function getProductDescription(product: StoreProduct): {
       },
     ],
   };
+}
+
+export function formatProductDescriptionText(product: {
+  category?: string;
+  slug?: string;
+  name?: string;
+  description?: string;
+}): string {
+  if (product.description && product.description.trim()) {
+    return product.description;
+  }
+  const desc = getProductDescription(product);
+  let text = desc.overview;
+  if (desc.sections && desc.sections.length > 0) {
+    for (const sec of desc.sections) {
+      text += `\n\n${sec.title}\n`;
+      if (Array.isArray(sec.content)) {
+        text += sec.content.map((c) => `• ${c}`).join("\n");
+      } else {
+        text += sec.content;
+      }
+    }
+  }
+  return text;
+}
+
+export function getDefaultProductCommands(product: {
+  category?: string;
+  slug?: string;
+  name?: string;
+}): ProductCommand[] {
+  const cat = (product.category || "").toLowerCase();
+  const slug = (product.slug || "").toLowerCase();
+  const name = (product.name || "").toLowerCase();
+
+  // 1. Coins: addcoin [citizenid] [qtde]
+  if (cat === "coins") {
+    const num = slug.replace(/\D/g, "") || "30";
+    return [{ timing: "Após a confirmação", command: `addcoin {client_identifier} ${num}` }];
+  }
+
+  // 2. Gemas: addgema [citizenid] [qtde]
+  if (cat === "gemas") {
+    const num = slug.replace(/\D/g, "") || "60";
+    return [{ timing: "Após a confirmação", command: `addgema {client_identifier} ${num}` }];
+  }
+
+  // 3. VIPs: setvip [citizenid] [tipo] [dias] & removevip [citizenid] ao expirar
+  if (cat === "vips") {
+    let vipType = "turista";
+    if (name.includes("paulista") || slug.includes("paulista")) vipType = "paulista";
+    else if (name.includes("distrito") || slug.includes("distrito")) vipType = "distrito";
+    else if (name.includes("magnata") || slug.includes("magnata")) vipType = "magnata";
+    else if (name.includes("policial") || slug.includes("policial")) vipType = "policial";
+
+    const isWipe = name.includes("wipe") || slug.includes("wipe");
+    const days = isWipe ? 0 : 30;
+
+    const cmds = [
+      { timing: "Após a confirmação", command: `setvip {client_identifier} ${vipType} ${days}` },
+    ];
+
+    // Bônus em gemas dos planos VIP (conforme CentralCart)
+    if (vipType === "magnata") {
+      cmds.push({ timing: "Após a confirmação", command: `addgema {client_identifier} 500` });
+    } else if (vipType === "distrito") {
+      cmds.push({ timing: "Após a confirmação", command: `addgema {client_identifier} 250` });
+    } else if (vipType === "paulista") {
+      cmds.push({ timing: "Após a confirmação", command: `addgema {client_identifier} 125` });
+    } else if (vipType === "turista") {
+      cmds.push({ timing: "Após a confirmação", command: `addgema {client_identifier} 60` });
+    }
+
+    // Remoção automática ao expirar
+    if (!isWipe) {
+      cmds.push({ timing: "Quando expirar", command: `removevip {client_identifier}` });
+    }
+
+    return cmds;
+  }
+
+  // 4. Som: addsom [citizenid]
+  if (slug.includes("som") || name.includes("/som") || name.includes("som")) {
+    return [{ timing: "Após a confirmação", command: `addsom {client_identifier}` }];
+  }
+
+  // 5. Armas: addarmas [citizenid]
+  if (slug.includes("armas") || name.includes("armas")) {
+    return [{ timing: "Após a confirmação", command: `addarmas {client_identifier}` }];
+  }
+
+  // 6. Packs de dinheiro / Itens: item2 [citizenid] [item] [qtde]
+  if (slug.includes("100k") || name.includes("100k")) {
+    return [{ timing: "Após a confirmação", command: `item2 {client_identifier} money 100000` }];
+  }
+  if (slug.includes("500k") || name.includes("500k")) {
+    return [{ timing: "Após a confirmação", command: `item2 {client_identifier} money 500000` }];
+  }
+  if (slug.includes("1kk") || name.includes("1kk")) {
+    return [{ timing: "Após a confirmação", command: `item2 {client_identifier} money 1000000` }];
+  }
+
+  // 7. Unban
+  if (slug.includes("unban") || name.includes("unban")) {
+    return [{ timing: "Após a confirmação", command: `unban {client_identifier}` }];
+  }
+
+  return [{ timing: "Após a confirmação", command: `item2 {client_identifier} item_padrao 1` }];
 }

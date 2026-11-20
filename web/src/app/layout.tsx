@@ -33,17 +33,13 @@ export default function RootLayout({
       className={`${geist.variable} ${kanit.variable} h-full antialiased dark bg-[#09090b]`}
     >
       <body className="min-h-full flex flex-col font-sans bg-transparent text-[#fafafa] relative">
-        {/* Real Distrito Paulista City Wallpaper (Fixed background - High Visibility) */}
-        <img
-          alt="Distrito Paulista Wallpaper"
-          className="fixed object-cover select-none pointer-events-none w-full h-full top-0 left-0 -z-20"
-          src="/background.webp"
-        />
-
-        {/* Ambient Amber Glow Circles (Identical to CentralCart) */}
-        <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none select-none">
-          <div className="size-[30rem] rounded-full bg-gradient-to-bl from-amber-500/20 blur-3xl absolute -top-1/3 left-0" />
-          <div className="hidden sm:block size-[45rem] rounded-full bg-gradient-to-bl from-amber-500/25 blur-3xl absolute -top-1/3 -right-1/2 sm:right-20" />
+        {/* Real Distrito Paulista City Wallpaper (Fixed background - Pristine High Quality) */}
+        <div className="fixed inset-0 -z-20 pointer-events-none select-none overflow-hidden">
+          <img
+            alt="Distrito Paulista Wallpaper"
+            className="w-full h-full object-cover object-center"
+            src="/background.png"
+          />
         </div>
 
         <CartProvider>

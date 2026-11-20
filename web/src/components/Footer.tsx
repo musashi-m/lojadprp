@@ -3,6 +3,7 @@
 import React from "react";
 import { STORE_CONFIG } from "@/data/mockProducts";
 import { ShieldCheck, Zap } from "lucide-react";
+import { PixIcon } from "@/components/PixIcon";
 
 export const Footer: React.FC = () => {
   return (
@@ -37,7 +38,7 @@ export const Footer: React.FC = () => {
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 text-xs">
             <div className="flex items-center gap-2 rounded-lg bg-white/5 border border-white/10 px-3.5 py-2">
-              <Zap className="h-4 w-4 text-amber-400" />
+              <PixIcon className="size-4 text-[#32bcad]" />
               <div>
                 <div className="font-bold text-zinc-200">PIX Instantâneo</div>
                 <div className="text-[10px] text-zinc-500">Aprovação em 30s</div>

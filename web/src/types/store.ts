@@ -1,6 +1,7 @@
-import { StoreProduct } from "@/data/mockProducts";
+import { StoreProduct, StoreCategory } from "@/data/mockProducts";
 
-export type ProductCategory = 'todos' | 'coins' | 'gemas' | 'vips' | 'especiais' | 'policial' | 'pacotes';
+export type ProductCategory = 'todos' | 'coins' | 'gemas' | 'vips' | 'especiais' | 'policial' | 'pacotes' | string;
+export type { StoreCategory };
 
 export interface CartItem {
   product: StoreProduct;
@@ -12,6 +13,7 @@ export interface DiscordUser {
   username: string; // e.g. "lucas_rp"
   globalName?: string; // e.g. "Lucas Corleone"
   avatar?: string;
+  email?: string | null;
 }
 
 export interface CheckoutFormData {
