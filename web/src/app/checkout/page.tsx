@@ -8,6 +8,7 @@ import { Footer } from "@/components/Footer";
 import { PixCheckoutModal } from "@/components/PixCheckoutModal";
 import { CitizenModal } from "@/components/CitizenModal";
 import { PixIcon } from "@/components/PixIcon";
+import { DiscordIcon } from "@/components/DiscordIcon";
 import { formatCurrency } from "@/lib/utils";
 import { STORE_CONFIG } from "@/data/mockProducts";
 import {
@@ -18,7 +19,6 @@ import {
   X,
   Zap,
   Tag,
-  Disc as DiscordIcon,
   CheckCircle2,
   AlertCircle,
   HelpCircle,
@@ -59,10 +59,10 @@ export default function CheckoutPage() {
   const [couponInput, setCouponInput] = useState("");
   const [couponFeedback, setCouponFeedback] = useState<{ success: boolean; message: string } | null>(null);
 
-  // Auto preenche o email do cliente caso logado no Discord
+  // Auto preenche e trava o email do cliente caso logado no Discord
   useEffect(() => {
     if (discordUser?.email) {
-      setEmail((prev) => (prev ? prev : discordUser.email || ""));
+      setEmail(discordUser.email);
     }
   }, [discordUser]);
 
@@ -365,15 +365,26 @@ export default function CheckoutPage() {
                       />
                     </div>
 
-                    <div>
+                    <div className="relative">
                       <input
                         type="email"
                         required
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => !discordUser?.email && setEmail(e.target.value)}
+                        readOnly={Boolean(discordUser?.email)}
                         placeholder="Email"
-                        className="w-full h-11 rounded-[0.6rem] bg-white/[0.04] border border-white/10 px-4 text-sm text-white placeholder-zinc-500 outline-none focus:border-[#ef9f00] transition-colors"
+                        className={`w-full h-11 rounded-[0.6rem] bg-white/[0.04] border border-white/10 px-4 text-sm text-white placeholder-zinc-500 outline-none transition-colors ${
+                          discordUser?.email
+                            ? "opacity-75 cursor-not-allowed bg-white/[0.02] border-white/5 text-zinc-300 pr-44"
+                            : "focus:border-[#ef9f00]"
+                        }`}
                       />
+                      {discordUser?.email && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-zinc-400 font-medium bg-white/5 px-2 py-0.5 rounded border border-white/10 flex items-center gap-1 select-none pointer-events-none">
+                          <ShieldCheck className="size-3 text-[#5865F2]" />
+                          Travado pelo Discord
+                        </span>
+                      )}
                     </div>
 
                     <div>
